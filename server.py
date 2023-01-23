@@ -1,6 +1,7 @@
 #  coding: utf-8 
 import socketserver
 
+
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,11 +29,31 @@ import socketserver
 
 
 class MyWebServer(socketserver.BaseRequestHandler):
-    
     def handle(self):
         self.data = self.request.recv(1024).strip()
+        string_data = self.data.decode("utf-8")
+        # print(string_data)
+        
+        string_data = string_data.split("\n")
+        filename = string_data[0].split(" ")[1]
+        # print("filename: ", filename)
+
+        response = ""
+
+        if filename == '/':
+            filename = '/index.html'
+
+        try:
+            with open("www" + filename) as f:
+                f_data = f.read()
+                response = "HTTP/1.1 200 OK\n\n" + f_data
+        except FileNotFoundError:
+            response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
+
         print ("Got a request of: %s\n" % self.data)
-        self.request.sendall(bytearray("OK",'utf-8'))
+        self.request.sendall(bytearray(response,'utf-8'))
+
+
 
 if __name__ == "__main__":
     HOST, PORT = "localhost", 8080
