@@ -1,6 +1,6 @@
 #  coding: utf-8 
 import socketserver
-
+import os
 
 # Copyright 2013 Abram Hindle, Eddie Antonio Santos
 # 
@@ -40,13 +40,29 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         response = ""
 
-        if filename == '/':
-            filename = '/index.html'
+        # homepage index.html
+        if filename == "/":
+            filename = "/index.html"
+
+        path = "www" + filename
+        is_dir = False
+        content_type = ""
+
+        # set content-type
+        filename, file_extension = os.path.splitext(path)
+        
+        if file_extension == ".html":
+            content_type = "Content-Type: text/html"
+        elif file_extension == ".css":
+            content_type = "Content-Type: text/css"
+
+        if os.path.isdir("path"):
+            is_dir = True
 
         try:
-            with open("www" + filename) as f:
+            with open(path) as f:
                 f_data = f.read()
-                response = "HTTP/1.1 200 OK\n\n" + f_data
+                response = "HTTP/1.1 200 OK\r\n" + content_type + "\n\n" + f_data
         except FileNotFoundError:
             response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
 
