@@ -35,40 +35,61 @@ class MyWebServer(socketserver.BaseRequestHandler):
         # print(string_data)
         
         string_data = string_data.split("\n")
-        filename = string_data[0].split(" ")[1]
+        first_line = string_data[0].split(" ")
+        req_type = first_line[0]
+        loc = first_line[1][1:]
         # print("filename: ", filename)
-
-        response = ""
-
-        # homepage index.html
-        if filename == "/":
-            filename = "/index.html"
-
-        path = "www" + filename
-        is_dir = False
-        content_type = ""
-
-        # set content-type
-        filename, file_extension = os.path.splitext(path)
         
-        if file_extension == ".html":
-            content_type = "Content-Type: text/html"
-        elif file_extension == ".css":
-            content_type = "Content-Type: text/css"
+        response = ""
+        content_type = ""
+        
+        if req_type != "GET":
+            response = "HTTP/1.1 405 Method Not Allowed\n\nMethod Not Allowed"
+        else:
+            curr_dir_path = os.path.dirname(os.path.realpath(__file__))
+            root = path = os.path.join(curr_dir_path, "www")
+            
 
-        if os.path.isdir("path"):
-            is_dir = True
+            path = os.path.join(root, loc)
+            # print("PATH::    ", path)
 
-        try:
-            with open(path) as f:
-                f_data = f.read()
-                response = "HTTP/1.1 200 OK\r\n" + content_type + "\n\n" + f_data
-        except FileNotFoundError:
-            response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
+            # homepage index.html
+            if path == root:
+                path = os.path.join(path, "index.html")
+
+            # add index.html to paths ending with "/"
+            if os.path.isdir(path) and path.endswith("/"):
+                path = os.path.join(path, "index.html")
+
+            
+            # set content-type
+            content_type = ""
+            _, file_extension = os.path.splitext(path)
+            
+            if file_extension == ".html":
+                content_type = "Content-Type: text/html"
+            elif file_extension == ".css":
+                content_type = "Content-Type: text/css"
+
+            # to make sure the realpath of the file is inside the root path
+            path = os.path.realpath(path)
+
+            if path.startswith(root) and not os.path.isdir(path):
+                try:
+                    with open(path) as f:
+                        f_data = f.read()
+                        response = "HTTP/1.1 200 OK\r\n" + content_type + "\n\n" + f_data
+                except FileNotFoundError:
+                    response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
+            else:
+                response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
+            
+            if os.path.isdir(path):
+                location = f"/{loc}/"
+                response = f"HTTP/1.1 301 Moved Permanently\r\nLocation: {location}\n\n301 Moved Permanently"
 
         print ("Got a request of: %s\n" % self.data)
         self.request.sendall(bytearray(response,'utf-8'))
-
 
 
 if __name__ == "__main__":
