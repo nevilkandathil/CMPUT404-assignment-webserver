@@ -60,7 +60,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
             # add index.html to paths ending with "/"
             if os.path.isdir(path) and path.endswith("/"):
                 path = os.path.join(path, "index.html")
-
             
             # set content-type
             content_type = ""
@@ -74,6 +73,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
             # to make sure the realpath of the file is inside the root path
             path = os.path.realpath(path)
 
+            # handle invalid file paths
             if path.startswith(root) and not os.path.isdir(path):
                 try:
                     with open(path) as f:
@@ -81,9 +81,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
                         response = "HTTP/1.1 200 OK\r\n" + content_type + "\n\n" + f_data
                 except FileNotFoundError:
                     response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
+            # if realpath of the file is not inside the root path
             else:
                 response = "HTTP/1.1 404 NOT FOUND\n\nFile Not Found"
             
+            # if directory exists and does not have a "/"
             if os.path.isdir(path):
                 location = f"/{loc}/"
                 response = f"HTTP/1.1 301 Moved Permanently\r\nLocation: {location}\n\n301 Moved Permanently"
